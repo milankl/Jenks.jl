@@ -1,6 +1,7 @@
 "Jenks Natural Breaks Optimzation algorithm. Assumes data in X to be sorted."
 function JenksOptimization(n::Int,X::Array{T,1},
-                            maxiter::Int=1000,
+                            errornorm::Int=1,
+                            maxiter::Int=200,
                             flux::Real=0.1,
                             feedback::Bool=true) where {T<:AbstractFloat}
 
@@ -8,62 +9,63 @@ function JenksOptimization(n::Int,X::Array{T,1},
 
     # Initialisation
     breaks = BreaksInit(n,X)            # lower bounds of every class as index of X
-    SDCMs = Array{Float64,1}(undef,n)   # squared deviations from class mean for each class
     SDAM = SqDeviation(X)               # squared deviation from array mean (this is constant)
+    DEVs = Array{Float64,1}(undef,n)    # Deviations from class centre for each class (lin/sq)
+
+
+    if errornorm == 1
+        Deviation = LinDeviation
+    elseif errornorm == 2
+        Deviation = SqDeviation
+    else
+        throw(error("Errornorm '$errornorm' not defined."))
+    end
 
     t0 = time()
     for iter in 1:maxiter
 
-        # Get the squared deviations for all classes
+        # Get the lin/squared deviations for all classes
         for iclass in 1:n
-            SDCMs[iclass] = SqDeviation(ClassValues(X,breaks,iclass))
+            DEVs[iclass] = Deviation(ClassValues(X,breaks,iclass))
         end
 
         # provide goodness of variance feedback
         if feedback
-            GVF = 1-sum(SDCMs)/SDAM
             percent = Int(round(iter/maxiter*100))
-            print("\r\u1b[K")
-            print("$percent%: GVF=$GVF")
+
+            if errornorm == 1
+                ARE = @sprintf "%.8f" sum(DEVs)/ndata
+                print("\r\u1b[K")
+                print("$percent%: ARE=$ARE")
+            else
+                GVF = @sprintf "%.8f" 1-sum(DEVs)/SDAM
+                print("\r\u1b[K")
+                print("$percent%: GVF=$GVF")
+            end
         end
 
-
+        # shift class bounds
         for iclass in 1:n-1
 
-            # for class sizes
-            a,b,c = breaks[iclass:iclass+2]
+            a,b,c = breaks[iclass:iclass+2]         # for class sizes
 
-            # # variance ratio
-            # v_ratio = SDCMs[iclass]/SDCMs[iclass+1]
-            # v_ratio = Int(round(v_ratio > 1.0 ? v_ratio : 1/v_ratio))   # invert ratio if < 1
-
-            if SDCMs[iclass] < SDCMs[iclass+1]      # compare deviations between two adjacent classes
-
-                # class size factor: Bigger classes give away more data points
-                cs_factor = Int(round((b-a)*flux))
-                breaks[iclass+1] += cs_factor #decay(cs_factor,iter,maxiter)     # shift data points to the class with smaller variance
+            if DEVs[iclass] < DEVs[iclass+1]        # compare deviations between two adjacent classes
+                cs_factor = Int(round((b-a)*flux))  # class size factor: Bigger classes give away more data points
+                # shift data points to the class with smaller DEV
+                newbreak = breaks[iclass+1]+cs_factor
+                breaks[iclass+1] = min(newbreak,breaks[iclass+2]-2)
             else
-                # class size factor: Bigger classes give away more data points
                 cs_factor = Int(round((c-b)*flux))
-                breaks[iclass+1] -= cs_factor #decay(cs_factor,iter,maxiter)               # shift data points to the class with smaller variance
+                newbreak = breaks[iclass+1]-cs_factor
+                breaks[iclass+1] = max(newbreak,breaks[iclass]+2)
             end
-
-            #println((cs_factor,b-a,c-b,SDCMs[iclass],SDCMs[iclass+1]))
         end
-
-        breaks[n] = min(breaks[n],ndata)
-
-
     end
     dt = time() - t0
     println(", finished in $(dt)s.")
 
     return breaks
 end
-
-# function decay(f::Int,i::Int,imax::Int)
-#     return max(Int(round(f*i/imax)),1)
-# end
 
 """Returns the data point values for a given class i, provided the data X and
 the breaks. Assumes the data array X to be sorted."""
@@ -73,12 +75,13 @@ function ClassValues(X::Array{T,1},breaks::Array{Int,1},i::Int) where {T<:Abstra
 end
 
 function JenksClassification(n::Int,X::Array{T,1};
+                            errornorm::Int=1,
                             maxiter::Int=1000,
                             flux::Real=0.1,
                             feedback::Bool=true) where {T<:AbstractFloat}
 
     sort!(X)
-    breaks = JenksOptimization(n,X,maxiter,flux,feedback)
+    breaks = JenksOptimization(n,X,errornorm,maxiter,flux,feedback)
 
     class_centres = Array{Float64,1}(undef,n)
 
