@@ -62,7 +62,7 @@ function JenksOptimization(n::Int,X::Array{T,1},
         end
     end
     dt = time() - t0
-    println(", finished in $(dt)s.")
+    println(@sprintf ", finished in %.2fs." dt)
 
     return breaks
 end
@@ -74,15 +74,17 @@ function ClassValues(X::Array{T,1},breaks::Array{Int,1},i::Int) where {T<:Abstra
     # @inbounds return X[breaks[i]:breaks[i+1]-1]
 end
 
+"""Run the JenksOptimization and return the class centres calculated from the class breaks."""
 function JenksClassification(n::Int,X::Array{T,1};
                             errornorm::Int=1,
-                            maxiter::Int=1000,
+                            maxiter::Int=200,
                             flux::Real=0.1,
                             feedback::Bool=true) where {T<:AbstractFloat}
 
     sort!(X)
     breaks = JenksOptimization(n,X,errornorm,maxiter,flux,feedback)
 
+    # Compute class centres from breaks 
     class_centres = Array{Float64,1}(undef,n)
 
     for i in 1:n
