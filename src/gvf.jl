@@ -1,9 +1,10 @@
 """Squared deviations from the array mean."""
-function SDAM(X::Array{T,1},Xmean::T) where {T<:AbstractFloat}
+function SqDeviation(X::Array{T,1}) where {T<:AbstractFloat}
 
     s = 0.0
+    Xmean = mean(X)
 
-    for xi in X
+    @simd for xi in X
         s += (xi - Xmean)^2
     end
 
@@ -21,17 +22,7 @@ function SDCM(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
     s = 0.0
 
     for iclass in 1:n
-
-        # all values in that class
-        if iclass < n
-            class = X[breaks[iclass]:breaks[iclass+1]-1]
-        else
-            class = X[breaks[end]:end]
-        end
-
-        classmean = mean(class)
-        s += SDAM(class,classmean)
-
+        s += SqDeviation(ClassValues(X,breaks,iclass))
     end
 
     return s
