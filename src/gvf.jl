@@ -10,6 +10,19 @@ function SDAM(X::Array{T,1},Xmean::T) where {T<:AbstractFloat}
     return s
 end
 
+"""Squared deviations from the array mean."""
+function SqDeviation(X::Array{T,1}) where {T<:AbstractFloat}
+
+    s = 0.0
+    Xmean = mean(X)
+
+    @simd for xi in X
+        s += (xi - Xmean)^2
+    end
+
+    return s
+end
+
 """Squared deviations from the class means."""
 function SDCM(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
 
