@@ -1,6 +1,6 @@
 module Jenks
 
-export jenks
+export JenksOptimization, GVF, JenksClassification
 
 using Random, StatsBase, Statistics, Printf
 
