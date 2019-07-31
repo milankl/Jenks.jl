@@ -2,10 +2,23 @@
 function SqDeviation(X::Array{T,1}) where {T<:AbstractFloat}
 
     s = 0.0
-    Xmean = mean(X)
+    μ = mean(X)
 
     @simd for xi in X
-        s += (xi - Xmean)^2
+        s += (xi - μ)^2
+    end
+
+    return s
+end
+
+"""Linear deviations from the array mean - i.e. L1-Norm."""
+function LinDeviation(X::Array{T,1}) where {T<:AbstractFloat}
+
+    s = 0.0
+    μ = mean(X)
+
+    @simd for xi in X
+        s += abs(xi - μ)
     end
 
     return s
