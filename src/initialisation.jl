@@ -39,6 +39,7 @@ function BreaksInit(n::Int,X::Array{T,1};
     return breaks
 end
 
+"""Find the closest index in array x to a."""
 function FindClosest(x::Array{T,1},a::T) where {T<:AbstractFloat}
     return argmin(abs.(x.-a))
 end

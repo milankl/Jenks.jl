@@ -29,8 +29,7 @@ function SDCM(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
 end
 
 function GVF(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
-    Xmean = mean(X)
-    sdam = SDAM(X,Xmean)
+    sdam = SqDeviation(X)
     sdcm = SDCM(X,breaks)
     return 1 - sdcm/sdam
 end
