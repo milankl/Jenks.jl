@@ -2,8 +2,9 @@
 function JenksClassification(n::Int,X::Array{T,1};
                             errornorm::Int=1,
                             maxiter::Int=200,
-                            flux::Real=0.3,
-                            fluxadjust::Real=1.02,
+                            flux::Real=0.1,
+                            fluxadjust::Real=1.03,
+                            fluxadjust_bothways::Bool=true,
                             feedback::Bool=true) where {T<:AbstractFloat}
 
     sort!(X)
@@ -38,8 +39,6 @@ function JenksClassification(n::Int,X::Array{T,1};
     # automatic flux adjustment
     fluxes = JR.fluxes
 
-    println("Both ways.")
-
     t0 = time()
     for iter in 1:maxiter
 
@@ -61,9 +60,9 @@ function JenksClassification(n::Int,X::Array{T,1};
                 # adjust fluxes based on history
                 if iter > 1
                     if DEVs_pre[iclass] >= DEVs_pre[iclass+1]    # flux was previously in opposite direction
-                        fluxes[iclass] /= fluxadjust            # decrease flux
-                    else                                        # flux was previously in same direction
-                        fluxes[iclass] *= fluxadjust            # increase flux
+                        fluxes[iclass] /= fluxadjust             # decrease flux
+                    elseif fluxadjust_bothways                          # flux was previously in same direction
+                        fluxes[iclass] *= fluxadjust             # increase flux
                     end
                 end
 
@@ -76,9 +75,9 @@ function JenksClassification(n::Int,X::Array{T,1};
 
                 # adjust fluxes based on history
                 if iter > 1
-                    if DEVs_pre[iclass] =< DEVs_pre[iclass+1]    # flux was previously in opposite direction
+                    if DEVs_pre[iclass] <= DEVs_pre[iclass+1]    # flux was previously in opposite direction
                         fluxes[iclass] /= fluxadjust
-                    else
+                    elseif fluxadjust_bothways
                         fluxes[iclass] *= fluxadjust
                     end
                 end
