@@ -25,3 +25,17 @@ function JenksResult(n::Int,data::Array{T,1};
 
     JenksResult(n,ndata,breaks,centres,n_in_class,ARE,GVF,errornorm,maxiter,dt)
 end
+
+"""Calculate the class centres from the class break indices. Assumes data in X to be sorted."""
+function Breaks2Centres!(JR::JenksResult,X::Array{T,1}) where {T<:AbstractFloat}
+    for i in 1:JR.n
+        JR.centres[i] = (X[JR.breaks[i]] + X[JR.breaks[i+1]-1])/2
+    end
+end
+
+"""Calculate the class sizes (number of data points per class/interval) from break indices."""
+function Breaks2ClassSize!(JR::JenksResult)
+    for i in 1:JR.n
+        JR.n_in_class[i] = JR.breaks[i+1] - JR.breaks[i]
+    end
+end

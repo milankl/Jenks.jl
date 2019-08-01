@@ -1,14 +1,20 @@
 "Jenks Natural Breaks Optimzation algorithm. Assumes data in X to be sorted."
-function JenksOptimization(n::Int,X::Array{T,1},
+function JenksClassification(n::Int,X::Array{T,1};
                             errornorm::Int=1,
                             maxiter::Int=200,
                             flux::Real=0.1,
                             feedback::Bool=true) where {T<:AbstractFloat}
 
+    sort!(X)
     ndata = length(X)
 
+    # initialise a JenksResult struct
+    JR = JenksResult(n,X,errornorm=errornorm,maxiter=maxiter)
+    JR.ndata = ndata
+
     # Initialisation
-    breaks = BreaksInit(n,X)            # lower bounds of every class as index of X
+    breaks = JR.breaks                  # breaks is a view on the data in JR.breaks
+    breaks[:] = BreaksInit(n,X)         # lower bounds of every class as index of X
     SDAM = SqDeviation(X)               # squared deviation from array mean (this is constant)
     DEVs = Array{Float64,1}(undef,n)    # Deviations from class centre for each class (lin/sq)
 
@@ -61,35 +67,18 @@ function JenksOptimization(n::Int,X::Array{T,1},
             end
         end
     end
-    dt = time() - t0
-    println(@sprintf ", finished in %.2fs." dt)
+    JR.dt = time() - t0
+    feedback ? println(@sprintf ", finished in %.2fs." JR.dt) : nothing
 
-    return breaks
+    # convert to centres
+    Breaks2Centres!(JR,X)
+    Breaks2ClassSize!(JR)
+
+    return JR
 end
 
 """Returns the data point values for a given class i, provided the data X and
 the breaks. Assumes the data array X to be sorted."""
 function ClassValues(X::Array{T,1},breaks::Array{Int,1},i::Int) where {T<:AbstractFloat}
     return X[breaks[i]:breaks[i+1]-1]
-    # @inbounds return X[breaks[i]:breaks[i+1]-1]
-end
-
-"""Run the JenksOptimization and return the class centres calculated from the class breaks."""
-function JenksClassification(n::Int,X::Array{T,1};
-                            errornorm::Int=1,
-                            maxiter::Int=200,
-                            flux::Real=0.1,
-                            feedback::Bool=true) where {T<:AbstractFloat}
-
-    sort!(X)
-    breaks = JenksOptimization(n,X,errornorm,maxiter,flux,feedback)
-
-    # Compute class centres from breaks 
-    class_centres = Array{Float64,1}(undef,n)
-
-    for i in 1:n
-        class_centres[i] = (X[breaks[i]] + X[breaks[i+1]-1])/2
-    end
-
-    return class_centres
 end
