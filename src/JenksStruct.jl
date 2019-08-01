@@ -19,7 +19,7 @@ function JenksResult(n::Int,data::Array{T,1};
     ndata = length(data)
     breaks = Array{Int,1}(undef,n+1)
     centres = Array{Float64,1}(undef,n)
-    bounds = Array{Float64,1}(undef,n)
+    bounds = Array{Float64,1}(undef,n+1)
     n_in_class = Array{Int,1}(undef,n)
     ARE = 0.0
     GVF = 0.0
@@ -47,4 +47,5 @@ function Breaks2Bounds!(JR::JenksResult,X::Array{T,1}) where {T<:AbstractFloat}
     for i in 1:JR.n
         JR.bounds[i] = X[JR.breaks[i]]
     end
+    JR.bounds[end] = X[end]
 end
