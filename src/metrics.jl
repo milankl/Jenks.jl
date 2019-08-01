@@ -27,9 +27,9 @@ end
 """Squared deviations from the class means."""
 function SDCM(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
 
-    n = length(breaks)  # number of classes (aka intervals)
+    n = length(breaks)-1  # number of classes (aka intervals)
 
-    @boundscheck breaks[end] < length(X) || throw(BoundsError())
+    @boundscheck breaks[end] == length(X)+1 || throw(BoundsError())
     @boundscheck breaks[1] == 1 || throw(BoundsError())
 
     s = zero(T)
@@ -41,8 +41,19 @@ function SDCM(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
     return s
 end
 
+"""Goodness of variance fit for data array X (assumed to be sorted) and classes determined by break indices."""
 function GVF(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
-    sdam = SqDeviation(X)
-    sdcm = SDCM(X,breaks)
+    sdam = SqDeviation(X)       # squared deviation from array mean
+    sdcm = SDCM(X,breaks)       # sum  of squared deviations from class mean for each class
     return 1 - sdcm/sdam
+end
+
+"""Average rounding error for data array X (assumed to be sorted) and classes determind by break indices."""
+function ARE(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
+    s = zero(T)
+    ndata = length(X)
+    for iclass in 1:(length(breaks)-1)
+        s += LinDeviation(ClassValues(X,breaks,iclass))
+    end
+    return s/ndata
 end
