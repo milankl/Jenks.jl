@@ -18,13 +18,19 @@ function JenksClassification(n::Int,X::Array{T,1};
     SDAM = SqDeviation(X)               # squared deviation from array mean (this is constant)
     DEVs = Array{Float64,1}(undef,n)    # Deviations from class centre for each class (lin/sq)
 
-
+    # Rename deviation function (linear vs squared)
     if errornorm == 1
         Deviation = LinDeviation
     elseif errornorm == 2
         Deviation = SqDeviation
     else
         throw(error("Errornorm '$errornorm' not defined."))
+    end
+
+    if errornorm == 1
+        JR.AREhistory[1] = ARE(X,breaks)
+    else
+        JR.GVFhistory[1] = GVF(X,breaks)
     end
 
     t0 = time()
@@ -52,16 +58,25 @@ function JenksClassification(n::Int,X::Array{T,1};
             end
         end
 
+        # calculate global errors and store them
+        if errornorm == 1
+            AREnow = sum(DEVs)/ndata
+            JR.AREhistory[iter+1] = AREnow
+        else
+            GVFnow = 1-sum(DEVs)/SDAM
+            JR.GVFhistory[iter+1] = GVFnow
+        end
+
         # provide average rounding error / goodness of variance feedback
         if feedback
             percent = Int(round(iter/maxiter*100))
 
             if errornorm == 1
-                AREstring = @sprintf "%.8f" sum(DEVs)/ndata
+                AREstring = @sprintf "%.8f" AREnow
                 print("\r\u1b[K")
                 print("$percent%: ARE=$AREstring")
             else
-                GVFstring = @sprintf "%.8f" 1-sum(DEVs)/SDAM
+                GVFstring = @sprintf "%.8f" GVFnow
                 print("\r\u1b[K")
                 print("$percent%: GVF=$GVFstring")
             end

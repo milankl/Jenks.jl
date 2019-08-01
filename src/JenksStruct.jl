@@ -1,15 +1,17 @@
 mutable struct JenksResult
-    n::Int                      # number of classes / intervals
-    ndata::Int                  # number of data points
-    breaks::Array{Int,1}        # break indices in data array
-    bounds::Array{Float64,1}    # lower bound of each class
-    centres::Array{Float64,1}   # centres of intervals
-    n_in_class::Array{Int,1}    # number of data points per class
-    ARE::Float64                # Average rounding error (L1 norm)
-    GVF::Float64                # Goodness of variance fit
-    errornorm::Int              # 1 for L1, 2 for L2
-    maxiter::Int                # number of iterations
-    dt::Float64                 # time for all iterations (excl initialisation)
+    n::Int                          # number of classes / intervals
+    ndata::Int                      # number of data points
+    breaks::Array{Int,1}            # break indices in data array
+    bounds::Array{Float64,1}        # lower bound of each class
+    centres::Array{Float64,1}       # centres of intervals
+    n_in_class::Array{Int,1}        # number of data points per class
+    ARE::Float64                    # Average rounding error (L1 norm)
+    GVF::Float64                    # Goodness of variance fit
+    AREhistory::Array{Float64,1}    # Rounding error for each iteration
+    GVFhistory::Array{Float64,1}    # GVF for each iteration
+    errornorm::Int                  # 1 for L1, 2 for L2
+    maxiter::Int                    # number of iterations
+    dt::Float64                     # time for all iterations (excl initialisation)
 end
 
 function JenksResult(n::Int,data::Array{T,1};
@@ -17,15 +19,25 @@ function JenksResult(n::Int,data::Array{T,1};
                     errornorm::Int=1) where {T<:AbstractFloat}
 
     ndata = length(data)
+
+    # classification results
     breaks = Array{Int,1}(undef,n+1)
     centres = Array{Float64,1}(undef,n)
     bounds = Array{Float64,1}(undef,n+1)
     n_in_class = Array{Int,1}(undef,n)
+
+    # error measures
     ARE = 0.0
     GVF = 0.0
+    AREhistory = Array{Float64,1}(undef,maxiter+1)
+    GVFhistory = Array{Float64,1}(undef,maxiter+1)
+
+    # time measures
     dt = 0.0
 
-    JenksResult(n,ndata,breaks,bounds,centres,n_in_class,ARE,GVF,errornorm,maxiter,dt)
+    JenksResult(n,ndata,breaks,bounds,centres,n_in_class,
+                ARE,GVF,AREhistory,GVFhistory,
+                errornorm,maxiter,dt)
 end
 
 """Calculate the class centres from the class break indices. Assumes data in X to be sorted."""
