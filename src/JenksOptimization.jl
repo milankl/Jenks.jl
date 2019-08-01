@@ -82,6 +82,7 @@ function JenksClassification(n::Int,X::Array{T,1};
     # convert breaks to centres and class sizes
     Breaks2Centres!(JR,X)
     Breaks2ClassSize!(JR)
+    Breaks2Bounds!(JR,X)
 
     return JR
 end
