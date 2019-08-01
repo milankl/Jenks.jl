@@ -9,5 +9,4 @@ include("metrics.jl")
 include("JenksStruct.jl")
 include("JenksOptimization.jl")
 
-
 end

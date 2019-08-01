@@ -11,12 +11,15 @@ mutable struct JenksResult
     GVFhistory::Array{Float64,1}    # GVF for each iteration
     errornorm::Int                  # 1 for L1, 2 for L2
     maxiter::Int                    # number of iterations
+    flux::Float64                   # initial fraction of class size that is moved to adjacent class
+    fluxes::Array{Float64,1}        # flux for each boundary between classes
     dt::Float64                     # time for all iterations (excl initialisation)
 end
 
 function JenksResult(n::Int,data::Array{T,1};
                     maxiter::Int=0,
-                    errornorm::Int=1) where {T<:AbstractFloat}
+                    errornorm::Int=1,
+                    flux::Float64=0.1) where {T<:AbstractFloat}
 
     ndata = length(data)
 
@@ -32,12 +35,15 @@ function JenksResult(n::Int,data::Array{T,1};
     AREhistory = Array{Float64,1}(undef,maxiter+1)
     GVFhistory = Array{Float64,1}(undef,maxiter+1)
 
+    # flux adjustment
+    fluxes = fill(flux,n-1)
+
     # time measures
     dt = 0.0
 
     JenksResult(n,ndata,breaks,bounds,centres,n_in_class,
                 ARE,GVF,AREhistory,GVFhistory,
-                errornorm,maxiter,dt)
+                errornorm,maxiter,flux,fluxes,dt)
 end
 
 """Calculate the class centres from the class break indices. Assumes data in X to be sorted."""

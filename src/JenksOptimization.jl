@@ -3,20 +3,23 @@ function JenksClassification(n::Int,X::Array{T,1};
                             errornorm::Int=1,
                             maxiter::Int=200,
                             flux::Real=0.1,
+                            fluxadjust::Real=1.03,
+                            fluxadjust_bothways::Bool=true,
                             feedback::Bool=true) where {T<:AbstractFloat}
 
     sort!(X)
     ndata = length(X)
 
     # initialise a JenksResult struct
-    JR = JenksResult(n,X,errornorm=errornorm,maxiter=maxiter)
+    JR = JenksResult(n,X,errornorm=errornorm,maxiter=maxiter,flux=flux)
     JR.ndata = ndata
 
     # Initialisation
-    breaks = JR.breaks                  # breaks is a view on the data in JR.breaks
-    breaks[:] = BreaksInit(n,X)         # lower bounds of every class as index of X
-    SDAM = SqDeviation(X)               # squared deviation from array mean (this is constant)
-    DEVs = Array{Float64,1}(undef,n)    # Deviations from class centre for each class (lin/sq)
+    breaks = JR.breaks                      # breaks is a view on the data in JR.breaks
+    breaks[:] = BreaksInit(n,X)             # lower bounds of every class as index of X
+    SDAM = SqDeviation(X)                   # squared deviation from array mean (this is constant)
+    DEVs = Array{Float64,1}(undef,n)        # Deviations from class centre for each class (lin/sq)
+    DEVs_pre = Array{Float64,1}(undef,n)    # Deviations from previous iteration
 
     # Rename deviation function (linear vs squared)
     if errornorm == 1
@@ -33,8 +36,13 @@ function JenksClassification(n::Int,X::Array{T,1};
         JR.GVFhistory[1] = GVF(X,breaks)
     end
 
+    # automatic flux adjustment
+    fluxes = JR.fluxes
+
     t0 = time()
     for iter in 1:maxiter
+
+        DEVs_pre .= DEVs
 
         # Get the lin/squared deviations for all classes
         for iclass in 1:n
@@ -46,13 +54,35 @@ function JenksClassification(n::Int,X::Array{T,1};
 
             a,b,c = breaks[iclass:iclass+2]         # for class sizes
 
-            if DEVs[iclass] < DEVs[iclass+1]        # compare deviations between two adjacent classes
-                cs_factor = Int(round((b-a)*flux))  # class size factor: Bigger classes give away more data points
+            # compare deviations between two adjacent classes
+            if DEVs[iclass] < DEVs[iclass+1]
+
+                # adjust fluxes based on history
+                if iter > 1
+                    if DEVs_pre[iclass] >= DEVs_pre[iclass+1]    # flux was previously in opposite direction
+                        fluxes[iclass] /= fluxadjust             # decrease flux
+                    elseif fluxadjust_bothways                          # flux was previously in same direction
+                        fluxes[iclass] *= fluxadjust             # increase flux
+                    end
+                end
+
+                # class size factor: Bigger classes give away more data points
                 # shift data points to the class with smaller DEV
+                cs_factor = Int(round((b-a)*fluxes[iclass]))
                 newbreak = breaks[iclass+1]+cs_factor
                 breaks[iclass+1] = min(newbreak,breaks[iclass+2]-2)
             else
-                cs_factor = Int(round((c-b)*flux))
+
+                # adjust fluxes based on history
+                if iter > 1
+                    if DEVs_pre[iclass] <= DEVs_pre[iclass+1]    # flux was previously in opposite direction
+                        fluxes[iclass] /= fluxadjust
+                    elseif fluxadjust_bothways
+                        fluxes[iclass] *= fluxadjust
+                    end
+                end
+
+                cs_factor = Int(round((c-b)*fluxes[iclass]))
                 newbreak = breaks[iclass+1]-cs_factor
                 breaks[iclass+1] = max(newbreak,breaks[iclass]+2)
             end
