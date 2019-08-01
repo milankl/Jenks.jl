@@ -1,7 +1,7 @@
 """Squared deviations from the array mean."""
 function SqDeviation(X::Array{T,1}) where {T<:AbstractFloat}
 
-    s = 0.0
+    s = zero(T)
     μ = mean(X)
 
     @simd for xi in X
@@ -14,7 +14,7 @@ end
 """Linear deviations from the array mean - i.e. L1-Norm."""
 function LinDeviation(X::Array{T,1}) where {T<:AbstractFloat}
 
-    s = 0.0
+    s = zero(T)
     μ = mean(X)
 
     @simd for xi in X
@@ -32,7 +32,7 @@ function SDCM(X::Array{T,1},breaks::Array{Int,1}) where {T<:AbstractFloat}
     @boundscheck breaks[end] < length(X) || throw(BoundsError())
     @boundscheck breaks[1] == 1 || throw(BoundsError())
 
-    s = 0.0
+    s = zero(T)
 
     for iclass in 1:n
         s += SqDeviation(ClassValues(X,breaks,iclass))
