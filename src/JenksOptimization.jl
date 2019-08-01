@@ -35,21 +35,6 @@ function JenksClassification(n::Int,X::Array{T,1};
             DEVs[iclass] = Deviation(ClassValues(X,breaks,iclass))
         end
 
-        # provide goodness of variance feedback
-        if feedback
-            percent = Int(round(iter/maxiter*100))
-
-            if errornorm == 1
-                ARE = @sprintf "%.8f" sum(DEVs)/ndata
-                print("\r\u1b[K")
-                print("$percent%: ARE=$ARE")
-            else
-                GVF = @sprintf "%.8f" 1-sum(DEVs)/SDAM
-                print("\r\u1b[K")
-                print("$percent%: GVF=$GVF")
-            end
-        end
-
         # shift class bounds
         for iclass in 1:n-1
 
@@ -66,11 +51,35 @@ function JenksClassification(n::Int,X::Array{T,1};
                 breaks[iclass+1] = max(newbreak,breaks[iclass]+2)
             end
         end
+
+        # provide average rounding error / goodness of variance feedback
+        if feedback
+            percent = Int(round(iter/maxiter*100))
+
+            if errornorm == 1
+                AREstring = @sprintf "%.8f" sum(DEVs)/ndata
+                print("\r\u1b[K")
+                print("$percent%: ARE=$AREstring")
+            else
+                GVFstring = @sprintf "%.8f" 1-sum(DEVs)/SDAM
+                print("\r\u1b[K")
+                print("$percent%: GVF=$GVFstring")
+            end
+        end
     end
     JR.dt = time() - t0
     feedback ? println(@sprintf ", finished in %.2fs." JR.dt) : nothing
 
-    # convert to centres
+    # Store both errornorms in JR struct
+    if errornorm == 1
+        JR.ARE = sum(DEVs)/ndata
+        JR.GVF = GVF(X,breaks)
+    else
+        JR.GVF = 1-sum(DEVs)/SDAM
+        JR.ARE = ARE(X,breaks)
+    end
+
+    # convert breaks to centres and class sizes
     Breaks2Centres!(JR,X)
     Breaks2ClassSize!(JR)
 
