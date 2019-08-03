@@ -6,9 +6,11 @@ Jenks Natural Breaks Optimization - a 1D classification method to minimise in-cl
 
 ![example](figs/example.png?raw=true "Example Jenks Classification")
 
+From [Wikipedia](https://en.wikipedia.org/wiki/Jenks_natural_breaks_optimization): Jenks natural breaks classification method, is a data clustering method designed to determine the best arrangement of values into different classes. This is done by seeking to minimize each class’s average deviation from the class mean, while maximizing each class’s deviation from the means of the other groups. In other words, the method seeks to reduce the variance within classes and maximize the variance between classes.
+
 # Algorithm
 
-[Jenks Classification](https://en.wikipedia.org/wiki/Jenks_natural_breaks_optimization) is an iterative optimization process. We start by
+Jenks Classification is an iterative optimization process. We start by
 
 0. Define `n` (arbitrary) initial classes. We use a maximum entropy method: The data array is sorted and split into `n` equal chunks, the boundaries of these classes are defined as the initial `breaks` for the `n` classes.
 
