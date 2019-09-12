@@ -56,13 +56,13 @@ function randintNDNC(N0::Int,N1::Int,n::Int;printwarn::Bool=true)
     v = rand(N0:N1,n)
     sort!(v)
 
-    for i in 1:n-1
+    for i in 1:n-1  # push to larger numbers in case of not consecutive
         if v[i+1]-v[i] < 2
             v[i+1] += 1
         end
     end
 
-    if isNDNC(v)
+    if isNDNC(v) && v[end] > N1     # check that actually NDNC and also not pushed beyond N1 by the last for-loop
         return v
     else
         #println("Do it again.")
