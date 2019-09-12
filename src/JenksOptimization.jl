@@ -5,6 +5,7 @@ function JenksClassification(n::Int,X::Array{T,1};
                             flux::Real=0.1,
                             fluxadjust::Real=1.03,
                             fluxadjust_bothways::Bool=true,
+                            inimode::String="maxentropy",
                             feedback::Bool=true) where {T<:AbstractFloat}
 
     sort!(X)
@@ -16,7 +17,7 @@ function JenksClassification(n::Int,X::Array{T,1};
 
     # Initialisation
     breaks = JR.breaks                      # breaks is a view on the data in JR.breaks
-    breaks[:] = BreaksInit(n,X)             # lower bounds of every class as index of X
+    breaks[:] = BreaksInit(n,X,inimode)     # lower bounds of every class as index of X
     SDAM = SqDeviation(X)                   # squared deviation from array mean (this is constant)
     DEVs = Array{Float64,1}(undef,n)        # Deviations from class centre for each class (lin/sq)
     DEVs_pre = Array{Float64,1}(undef,n)    # Deviations from previous iteration
