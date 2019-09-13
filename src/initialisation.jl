@@ -34,38 +34,28 @@ function BreaksInit(n::Int,X::Array{T,1},method::String="maxentropy") where {T<:
     return breaks
 end
 
-"""Find the closest index in array x to a."""
-function FindClosest(x::Array{T,1},a::T) where {T<:AbstractFloat}
-    return argmin(abs.(x.-a))
-end
-
-""" Check that array X has no duplicates and no consecutive numbers. Assumes X to be sorted."""
-function isNDNC(X::Array{Int,1})
-    return ~any(diff(X) .<= 1)
-end
-
 """randint with no duplicates and no consecutive numbers"""
-function randintNDNC(N0::Int,N1::Int,n::Int;printwarn::Bool=true)
+function randintNDNC(N0::Int,N1::Int,n::Int)
 
-    if printwarn
-        if (N1-N0)/n < 10
-            @warn "Finding random sample for a subset-set size ratio of >0.1 is likely taking a long time."
-        end
+    ratio = n/(N1-N0)
+
+    if ratio > 0.33
+        throw(error("Subset-set size ratio is $ratio, too likely that no solution can be found. Increase n."))
+    elseif ratio > 0.2 && n > 10000
+        @warn "Finding $n random numbers for a subset-set size ratio of $ratio may take a long time."
     end
 
-    v = rand(N0:N1,n)
+    v = Array{Int,1}(undef,n)
+    v[1] = rand(N0:N1)
+
+    for i in 2:n
+        r = rand(N0:N1)     # pick a random number
+        while any(abs.(r .- v[1:i-1]) .<= 1)    # check that it's not duplicate or a consecutive
+            r = rand(N0:N1) # if that's the case try another one.
+        end
+        v[i] = r
+    end
+
     sort!(v)
-
-    for i in 1:n-1  # push to larger numbers in case of not consecutive
-        if v[i+1]-v[i] < 2
-            v[i+1] += 1
-        end
-    end
-
-    if isNDNC(v) && v[end] > N1     # check that actually NDNC and also not pushed beyond N1 by the last for-loop
-        return v
-    else
-        #println("Do it again.")
-        return randintNDNC(N0,N1,n,printwarn=false)
-    end
+    return v
 end
