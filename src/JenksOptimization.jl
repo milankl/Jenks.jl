@@ -1,4 +1,34 @@
-"Jenks Natural Breaks Optimzation algorithm. Assumes data in X to be sorted."
+"""
+    R = JenksClassification(n,X)
+
+Jenks Natural Breaks Optimzation algorithm. Default parameters
+
+    JenksClassification(n::Int,                             # number of classes
+                        X::Array{T,1};                      # data
+                        errornorm::Int=1,                   # L1, or L2 errornorm
+                        maxiter::Int=200,                   # number of iterations
+                        flux::Real=0.1,                     # flux [fraction] of values from one class to another
+                        fluxadjust::Real=1.03,              # change in flux depending on previous flux direction
+                        fluxadjust_bothways::Bool=true,     # lower flux or also increase flux (=bothways)
+                        inimode::String="maxentropy",       # initialisation method
+                        feedback::Bool=true                 # feedback on progress and convergence
+
+# Examples
+
+```jldoc
+julia> R = JenksClassification(5,rand(10000));
+100%: ARE=0.05014468, finished in 0.01s.
+
+julia> R.breaks
+6-element Array{Int64,1}:
+     1
+  1972
+  3993
+  6041
+  8002
+ 10001
+```
+"""
 function JenksClassification(n::Int,X::Array{T,1};
                             errornorm::Int=1,
                             maxiter::Int=200,
